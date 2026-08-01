@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+psycopg[binary]
+redis
+websockets
+pytest
+httpx
