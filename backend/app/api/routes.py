@@ -16,6 +16,8 @@ from app.agent import (
     HealthStatus,
 )
 from app.agent.exceptions import AgentNotFoundError, DuplicateAgentError
+from app.geo import AgentSpec, GeoBounds, OverpassError, build_geo_scenario
+from app.geo.scenario_builder import OperatingAreaTooLargeError
 from app.mission import Mission, MissionRegistry, MissionStatus
 from app.mission.exceptions import DuplicateMissionError
 from app.path_planner import PathPlanner
@@ -32,6 +34,9 @@ from app.world.exceptions import (
 from .schemas import (
     AgentOut,
     AgentRouteResponse,
+    GeoBoundsOut,
+    GeoScenarioCreate,
+    GeoScenarioCreateResponse,
     MetricsResponse,
     PlanningResultOut,
     RunRequest,
@@ -87,9 +92,9 @@ def _build_agents(payload: ScenarioCreate) -> AgentRegistry:
     return registry
 
 
-def _build_missions(payload: ScenarioCreate) -> MissionRegistry:
+def _build_missions_from_list(mission_payloads: list) -> MissionRegistry:
     registry = MissionRegistry()
-    for mission_in in payload.missions:
+    for mission_in in mission_payloads:
         registry.add_mission(
             Mission(
                 id=mission_in.id,
@@ -102,6 +107,10 @@ def _build_missions(payload: ScenarioCreate) -> MissionRegistry:
             )
         )
     return registry
+
+
+def _build_missions(payload: ScenarioCreate) -> MissionRegistry:
+    return _build_missions_from_list(payload.missions)
 
 
 # ----------------------------------------------------------------------
@@ -142,6 +151,12 @@ def _serialize_mission(mission: Mission) -> dict:
 
 def _serialize_world_summary(world: World) -> WorldSummaryOut:
     return WorldSummaryOut(**world.world_summary())
+
+
+def _serialize_geo_bounds(bounds: GeoBounds | None) -> GeoBoundsOut | None:
+    if bounds is None:
+        return None
+    return GeoBoundsOut(south=bounds.south, west=bounds.west, north=bounds.north, east=bounds.east)
 
 
 def _get_session_or_404(session_id: str) -> Session:
@@ -233,6 +248,7 @@ def get_scenario(session_id: str) -> ScenarioStateResponse:
         agents=[_serialize_agent(a) for a in session.agents.list_agents()],
         missions=[_serialize_mission(m) for m in session.missions.list_missions()],
         simulation_summary=session.simulation_engine.simulation_summary(),
+        geo_bounds=_serialize_geo_bounds(session.geo_bounds),
     )
 
 
@@ -374,4 +390,107 @@ def get_agent_route(session_id: str, agent_id: str) -> AgentRouteResponse:
 
     return AgentRouteResponse(
         agent_id=agent_id, cells=list(route.cells), length=route.length
+    )
+
+
+# ----------------------------------------------------------------------
+# POST /scenarios/geo
+# ----------------------------------------------------------------------
+
+
+@router.post("/scenarios/geo", response_model=GeoScenarioCreateResponse, status_code=200)
+def create_geo_scenario(payload: GeoScenarioCreate) -> GeoScenarioCreateResponse:
+    """Create a scenario whose World is generated from real OpenStreetMap
+    building footprints inside the given geographic bounding box.
+
+    This is a thin construction path, not a second planning/simulation
+    implementation: app.geo.build_geo_scenario does the actual work
+    (Overpass query, building rasterization, World/agent construction),
+    all through World's and AgentRegistry's own existing, unmodified
+    public methods (see app/geo/scenario_builder.py's module
+    docstring). This handler's job is the same as create_scenario's:
+    call the builder, wire the resulting World/AgentRegistry into a
+    fresh PlanningEngine/PathPlanner/SimulationEngine exactly like
+    every other session, and store it.
+
+    No missions are created here -- mission targets come from a map
+    click. There is still no endpoint to add a mission to an
+    already-created session (see app/api/session.py and the project's
+    existing "Known limitations" for the same gap on the original
+    POST /scenarios path): a client wanting to add a mission to a
+    geo-generated scenario calls this endpoint again with the SAME
+    bounding box plus the new mission in `missions` (regenerating an
+    equivalent World from the same real building data -- deterministic,
+    see app/geo/conversion.py). Missions are accepted directly on this
+    request, exactly like ScenarioCreate.missions -- see
+    GeoScenarioCreate's own doc comment.
+
+    Agents are entirely user-configured via `payload.agents` -- zero,
+    one, or many, each with a caller-chosen id, platform type,
+    capabilities, and starting World cell. There is no automatic
+    fleet: an empty (or omitted) `agents` list creates a scenario with
+    no agents at all. See GeoScenarioCreate's own doc comment for why
+    x/y here are already World cells, not geographic coordinates.
+    """
+    try:
+        bounds = GeoBounds(
+            south=payload.south, west=payload.west, north=payload.north, east=payload.east
+        )
+        agent_specs = [
+            AgentSpec(
+                id=agent_in.id,
+                platform_type=agent_in.platform_type,
+                x=agent_in.x,
+                y=agent_in.y,
+                capabilities=frozenset(agent_in.capabilities),
+                battery_level=agent_in.battery_level,
+            )
+            for agent_in in payload.agents
+        ]
+        generated = build_geo_scenario(
+            bounds, payload.world_width, payload.world_height, agent_specs
+        )
+    except OperatingAreaTooLargeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except _SCENARIO_VALIDATION_ERRORS as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except OverpassError as exc:
+        # Not the caller's request being invalid -- Overpass itself
+        # failed or was unreachable. 502 (Bad Gateway) reflects that
+        # this API depends on an upstream service that did not
+        # respond correctly, distinct from a 422 validation failure or
+        # a 500 for a genuine internal bug.
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    try:
+        missions = _build_missions_from_list(payload.missions)
+    except _SCENARIO_VALIDATION_ERRORS as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # PlanningEngine and SimulationEngine both require a MissionRegistry
+    # at construction time -- this is the same, single MissionRegistry
+    # instance threaded through both engines and the stored session,
+    # matching create_scenario's own construction pattern exactly.
+    planning_engine = PlanningEngine(generated.world, generated.agents, missions)
+    path_planner = PathPlanner(generated.world)
+    simulation_engine = SimulationEngine(generated.world, generated.agents, missions, path_planner)
+
+    session = _store.create(
+        world=generated.world,
+        agents=generated.agents,
+        missions=missions,
+        planning_engine=planning_engine,
+        path_planner=path_planner,
+        simulation_engine=simulation_engine,
+        geo_bounds=bounds,
+    )
+
+    return GeoScenarioCreateResponse(
+        session_id=session.session_id,
+        phase=session.phase,
+        bounds=_serialize_geo_bounds(bounds),
+        world_width=generated.world_width,
+        world_height=generated.world_height,
+        building_count=generated.building_count,
+        obstacle_cell_count=generated.obstacle_cell_count,
     )
