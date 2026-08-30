@@ -17,10 +17,6 @@ from app.agent import AgentActivity, Capability, HealthStatus, PlatformType
 from app.mission import MissionPriority, MissionStatus
 from app.scenario.runner import DEFAULT_MAX_TICKS
 
-# ----------------------------------------------------------------------
-# POST /scenarios -- request body
-# ----------------------------------------------------------------------
-
 
 class WorldCreate(BaseModel):
     """Matches World.__init__(width, height)."""
@@ -149,6 +145,21 @@ class WorldSummaryOut(BaseModel):
     mission_zones: int
 
 
+class GeoBoundsOut(BaseModel):
+    """Echoes the geographic bounding box a session was created from
+    (app/geo/scenario_builder.py), when it was created via
+    POST /scenarios/geo. Lets the frontend convert every subsequent
+    World-cell response back to lat/lng using the exact bounds the
+    backend actually used -- not a value the frontend has to remember
+    or re-derive itself.
+    """
+
+    south: float
+    west: float
+    north: float
+    east: float
+
+
 # ----------------------------------------------------------------------
 # GET /scenarios/{session_id} -- response body
 # ----------------------------------------------------------------------
@@ -162,6 +173,10 @@ class ScenarioStateResponse(BaseModel):
     agents: list[AgentOut]
     missions: list[MissionOut]
     simulation_summary: dict[str, int]
+    # None for a session created via the original POST /scenarios (no
+    # real geographic area exists for it). Present for a session
+    # created via POST /scenarios/geo -- see GeoBoundsOut's doc comment.
+    geo_bounds: GeoBoundsOut | None = None
 
 
 # ----------------------------------------------------------------------
@@ -230,3 +245,73 @@ class MetricsResponse(BaseModel):
     agent_summary: dict[str, int | dict[str, int]]
     mission_summary: dict[str, int | dict[str, int]]
     simulation_summary: dict[str, int]
+
+
+# ----------------------------------------------------------------------
+# POST /scenarios/geo -- request body
+# ----------------------------------------------------------------------
+
+
+class GeoScenarioCreate(BaseModel):
+    """Request body for creating a scenario from a real geographic
+    operating area (app/geo/scenario_builder.py). Field names match
+    the project requirement's exact shape: south/west/north/east.
+
+    world_width/world_height are optional -- default to the same
+    12x12 the rest of this project has used throughout, so an existing
+    frontend or script that omits them still gets a working World.
+
+    agents is the user-configured fleet -- zero, one, or many. Empty
+    (the default) creates NO agents; there is no automatic fallback
+    fleet. Reuses AgentCreate exactly as ScenarioCreate.agents already
+    does (see _build_agents), so x/y here are World cell coordinates,
+    not geographic ones -- the frontend converts a user's map click to
+    a World cell before sending it, the same conversion it already
+    performs for mission target_cells (see docs/api-model.md,
+    "Frontend/Backend Boundary": all coordinate translation happens at
+    the frontend/API boundary, never inside the simulation).
+
+    missions is optional and defaults to none, exactly like
+    ScenarioCreate.missions -- planning still never runs here (see
+    create_geo_scenario's own doc comment); every mission still starts
+    PENDING. Included directly on this request (rather than requiring
+    a separate call) because there is no endpoint to add a mission to
+    an already-created session -- see create_geo_scenario's doc
+    comment for the full reasoning: a client wanting to add a mission
+    re-POSTs here with the same bounding box plus the new mission,
+    which regenerates an equivalent World deterministically from the
+    same real building data (app/geo/conversion.py) rather than
+    requiring a second, different endpoint.
+    """
+
+    south: float
+    west: float
+    north: float
+    east: float
+    world_width: int = 12
+    world_height: int = 12
+    agents: list[AgentCreate] = Field(default_factory=list)
+    missions: list[MissionCreate] = Field(default_factory=list)
+
+
+# ----------------------------------------------------------------------
+# POST /scenarios/geo -- response body
+# ----------------------------------------------------------------------
+
+
+class GeoScenarioCreateResponse(BaseModel):
+    """Kept response-compatible with ScenarioCreateResponse
+    (session_id, phase) per the project requirement -- extended with
+    the geographic metadata the frontend needs to convert every
+    subsequent GET /scenarios/{id} World-cell response back to
+    lat/lng, since a geo-created session's bounding box is chosen at
+    request time rather than fixed like the original demo scenario.
+    """
+
+    session_id: str
+    phase: str
+    bounds: GeoBoundsOut
+    world_width: int
+    world_height: int
+    building_count: int
+    obstacle_cell_count: int
