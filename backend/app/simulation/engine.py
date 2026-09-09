@@ -1,20 +1,4 @@
-"""The SimulationEngine class: advances a running multi-agent simulation.
-
-SimulationEngine connects World, Agent, Mission, and Path Planner into a
-running simulation. It reads missions that are already ASSIGNED (by
-whoever calls the Planning Engine externally), computes routes through
-Path Planner, and advances agents one cell per tick -- draining battery,
-respecting obstacles and occupied cells, and transitioning Mission and
-Agent state as execution completes, fails, or waits.
-
-SimulationEngine never decides which agent is assigned to which mission
-(the Planning Engine's job) and never computes a route itself (the Path
-Planner's job) -- see docs/simulation-model.md and docs/simulation-api.md
-for the full specification this module implements.
-
-This is a simulated software coordination layer, not a real drone/robot
-control system.
-"""
+"""The SimulationEngine class: advances a running multi-agent simulation."""
 
 from __future__ import annotations
 
@@ -25,9 +9,6 @@ from app.mission import Mission, MissionRegistry, MissionStatus
 from app.path_planner import PathPlanner, Route
 from app.world import World
 
-# Battery cost of a single move (one cell-to-cell step). Fixed and
-# deterministic in Version 1 -- see docs/simulation-model.md, "Battery
-# Model".
 _MOVE_COST = 1
 
 Position = tuple[int, int]
@@ -36,22 +17,6 @@ StepResult = dict[str, "int | list[str]"]
 
 @dataclass(frozen=True)
 class _Execution:
-    """Internal bookkeeping for one actively-tracked agent.
-
-    Not part of the public API -- see docs/simulation-model.md,
-    "Simulation State".
-
-    Attributes:
-        mission_id: The mission this agent is working, or None while
-            returning (the mission is already resolved by then).
-        route: The route currently being followed, or None if a route
-            still needs to be (re)computed -- see "_retry_route".
-        progress: Index into route.cells; route.cells[progress] is the
-            agent's current position. Meaningless while route is None.
-        launch_position: Where the agent started before its outbound
-            trip, and therefore where it returns to.
-    """
-
     mission_id: str | None
     route: Route | None
     progress: int
@@ -59,19 +24,6 @@ class _Execution:
 
 
 class SimulationEngine:
-    """Advances a multi-agent simulation, one tick at a time.
-
-    A SimulationEngine is bound to one World, one AgentRegistry, one
-    MissionRegistry, and one PathPlanner at construction. Its only
-    persistent state is its own execution bookkeeping (the current tick,
-    and which route each actively-tracked agent is following) -- it
-    never stores World, Agent, or Mission data itself.
-
-    SimulationEngine does not depend on the Planning Engine and never
-    assigns an agent to a mission. It only acts on missions that are
-    already ASSIGNED.
-    """
-
     def __init__(
         self,
         world: World,
@@ -79,20 +31,6 @@ class SimulationEngine:
         missions: MissionRegistry,
         path_planner: PathPlanner,
     ) -> None:
-        """Create a Simulation Engine bound to specific World, Agent,
-        Mission, and Path Planner instances, starting at tick 0.
-
-        Args:
-            world: The World agents move through.
-            agents: The AgentRegistry to read and update agent state in.
-            missions: The MissionRegistry to read and update mission
-                state in.
-            path_planner: The PathPlanner used to compute every route.
-
-        Raises:
-            TypeError: If any argument is not an instance of the
-                expected type.
-        """
         if not isinstance(world, World):
             raise TypeError(f"world must be a World instance, got {type(world).__name__}")
         if not isinstance(agents, AgentRegistry):
@@ -116,24 +54,44 @@ class SimulationEngine:
         self._tick = 0
         self._executions: dict[str, _Execution] = {}
 
-    # ------------------------------------------------------------------
-    # Public API (docs/simulation-api.md, "Public API")
-    # ------------------------------------------------------------------
+        # Mark every registered agent's starting cell as occupied, so
+        # World.is_walkable (and therefore every other agent's route
+        # planning and per-tick movement) is aware of it from tick 0 --
+        # not only once that agent begins actively executing a
+        # mission. Without this, an agent that has not yet started
+        # executing (still IDLE, or a mission that fails at pickup and
+        # releases it back to IDLE) was invisible to World's occupancy
+        # tracking, since _occupy_cell was previously only ever called
+        # from _begin_execution. That allowed a second agent to route
+        # directly onto the first agent's stationary position -- a
+        # real collision the project's multi-drone requirement does
+        # not allow. This is the smallest fix that closes that gap
+        # without changing per-tick movement, battery, health, or
+        # mission-completion logic, all of which are unmodified.
+        #
+        # Two agents may legitimately share a starting cell (nothing
+        # in Agent/AgentRegistry prevents it, and earlier project
+        # phases did not either) -- in that case the cell is occupied
+        # once, not per agent; World._occupy_cell already treats
+        # "already occupied" as a normal state to guard against here,
+        # not something to propagate as a construction-time error for
+        # a scenario that was previously accepted without complaint.
+        for agent in self._agents.list_agents():
+            if not self._world._is_occupied(agent.x, agent.y):
+                try:
+                    self._world._occupy_cell(agent.x, agent.y)
+                except ValueError:
+                    # Position is an obstacle cell or otherwise
+                    # unoccupiable -- leave it alone rather than fail
+                    # construction; per-tick movement already handles
+                    # an agent whose own state doesn't perfectly match
+                    # World (e.g. AgentNotFoundError paths elsewhere)
+                    # without raising, and this preserves that same
+                    # tolerance for a pre-existing, out-of-band agent
+                    # position at construction time.
+                    pass
 
     def step(self) -> StepResult:
-        """Advance the simulation by one tick.
-
-        Newly ASSIGNED missions are picked up this tick (their agent
-        does not move until the next tick -- see
-        docs/simulation-model.md, "Execution Lifecycle": "Each
-        subsequent tick, the agent advances"). Every agent already
-        under active execution before this call advances by one cell.
-
-        Returns:
-            {"tick": int, "moved": [...], "waiting": [...],
-            "completed_missions": [...], "failed_missions": [...],
-            "returned_home": [...]}.
-        """
         result: StepResult = {
             "tick": self._tick,
             "moved": [],
@@ -154,16 +112,6 @@ class SimulationEngine:
         return result
 
     def simulation_summary(self) -> dict[str, int]:
-        """Return aggregate counts describing the current simulation state.
-
-        Computed live from current World, Agent, and Mission state at
-        call time -- see docs/simulation-api.md, "Simulation Summary".
-
-        Returns:
-            {"tick": int, "agents_executing": int,
-            "agents_returning": int, "missions_in_progress": int,
-            "missions_completed": int, "missions_failed": int}.
-        """
         agents = self._agents.list_agents()
         missions = self._missions.list_missions()
 
@@ -186,24 +134,18 @@ class SimulationEngine:
             ),
         }
 
-    # ------------------------------------------------------------------
-    # Private helpers -- picking up newly ASSIGNED missions
-    # ------------------------------------------------------------------
+    def get_active_route(self, agent_id: str) -> Route | None:
+        execution = self._executions.get(agent_id)
+        if execution is None:
+            return None
+        return execution.route
 
     def _pick_up_assigned_missions(self, result: StepResult) -> None:
-        """Begin executing every mission with status ASSIGNED."""
         for mission in self._missions.list_missions():
             if mission.status is MissionStatus.ASSIGNED:
                 self._begin_execution(mission, result)
 
     def _begin_execution(self, mission: Mission, result: StepResult) -> None:
-        """Attempt to begin executing one newly-ASSIGNED mission.
-
-        Runs the round-trip battery check (docs/simulation-model.md,
-        "Battery Model"). On success, Mission becomes IN_PROGRESS and
-        Agent becomes EXECUTING_MISSION. On failure, Mission becomes
-        FAILED and the agent (if found) is released back to IDLE.
-        """
         agent_id = next(iter(mission.assigned_agent_ids), None)
         if agent_id is None:
             self._fail_mission(mission, None, result)
@@ -216,19 +158,36 @@ class SimulationEngine:
             return
 
         target = self._nearest_target_cell(agent, mission)
-        outbound = self._path_planner.find_path(agent.x, agent.y, target[0], target[1])
-        if outbound is None:
-            self._fail_mission(mission, agent, result)
-            return
+        # The agent's own current cell is already marked occupied (see
+        # __init__ -- every registered agent's starting cell is
+        # occupied from construction, not only once it begins
+        # executing). World.is_walkable would otherwise see the
+        # agent's own start cell as unwalkable and refuse to route it
+        # anywhere -- the same problem _find_path_from_agent already
+        # solves for a return trip, solved here the same way:
+        # release and immediately re-occupy around the two find_path
+        # calls, with nothing else running in between (SimulationEngine
+        # advances agents one at a time within a single tick), so the
+        # cell is never actually left free for another agent to claim.
+        self._world._release_cell(agent.x, agent.y)
+        try:
+            outbound = self._path_planner.find_path(agent.x, agent.y, target[0], target[1])
+            if outbound is None:
+                self._fail_mission(mission, agent, result)
+                return
 
-        return_route = self._path_planner.find_path(target[0], target[1], agent.x, agent.y)
-        if return_route is None or agent.battery_level < outbound.length + return_route.length:
-            self._fail_mission(mission, agent, result)
-            return
+            return_route = self._path_planner.find_path(target[0], target[1], agent.x, agent.y)
+            if (
+                return_route is None
+                or agent.battery_level < outbound.length + return_route.length
+            ):
+                self._fail_mission(mission, agent, result)
+                return
+        finally:
+            self._world._occupy_cell(agent.x, agent.y)
 
         self._missions.update_status(mission.id, MissionStatus.IN_PROGRESS)
         self._agents.update_activity(agent.id, AgentActivity.EXECUTING_MISSION)
-        self._world._occupy_cell(agent.x, agent.y)
         execution = _Execution(
             mission_id=mission.id,
             route=outbound,
@@ -236,16 +195,11 @@ class SimulationEngine:
             launch_position=(agent.x, agent.y),
         )
         if outbound.length == 0:
-            # Agent is already standing on the target cell -- there is
-            # no move to make before arriving, so resolve immediately
-            # rather than tracking an execution with nowhere left to
-            # advance to.
             self._handle_arrival(agent.id, execution, result)
         else:
             self._executions[agent.id] = execution
 
     def _fail_mission(self, mission: Mission, agent: Agent | None, result: StepResult) -> None:
-        """Mark a mission FAILED and release its agent (if any) to IDLE."""
         self._missions.update_status(mission.id, MissionStatus.FAILED)
         if agent is not None:
             self._agents.update_activity(agent.id, AgentActivity.IDLE)
@@ -253,24 +207,12 @@ class SimulationEngine:
         result["failed_missions"].append(mission.id)
 
     def _nearest_target_cell(self, agent: Agent, mission: Mission) -> Position:
-        """Pick the mission target cell closest to the agent by Manhattan
-        distance, breaking ties by (x, y) for determinism.
-
-        Version 1 uses this straight-line pre-filter rather than
-        comparing actual Path Planner costs for every candidate cell --
-        see docs/simulation-model.md, "Responsibilities".
-        """
         return min(
             mission.target_cells,
             key=lambda cell: (abs(cell[0] - agent.x) + abs(cell[1] - agent.y), cell[0], cell[1]),
         )
 
-    # ------------------------------------------------------------------
-    # Private helpers -- per-tick movement
-    # ------------------------------------------------------------------
-
     def _advance_one(self, agent_id: str, result: StepResult) -> None:
-        """Advance one actively-tracked agent by at most one cell."""
         execution = self._executions[agent_id]
 
         try:
@@ -308,12 +250,6 @@ class SimulationEngine:
     def _abort_due_to_health(
         self, agent: Agent, execution: _Execution, result: StepResult
     ) -> None:
-        """Stop tracking an agent whose health is no longer ONLINE.
-
-        If it was still outbound, its mission fails. If it was
-        returning, the mission already succeeded; the agent simply
-        stops where it is.
-        """
         self._world._release_cell(agent.x, agent.y)
         if execution.mission_id is not None:
             self._missions.update_status(execution.mission_id, MissionStatus.FAILED)
@@ -321,10 +257,6 @@ class SimulationEngine:
         self._executions.pop(agent.id, None)
 
     def _retry_route(self, agent: Agent, execution: _Execution, result: StepResult) -> None:
-        """Retry computing a route this agent needs (currently only
-        used for a return trip that had no route on a previous tick --
-        see docs/simulation-model.md, "Execution Lifecycle").
-        """
         route = self._find_path_from_agent(agent, execution.launch_position)
         if route is None:
             result["waiting"].append(agent.id)
@@ -332,7 +264,6 @@ class SimulationEngine:
         self._executions[agent.id] = replace(execution, route=route, progress=0)
 
     def _handle_arrival(self, agent_id: str, execution: _Execution, result: StepResult) -> None:
-        """Handle an agent reaching the final cell of its current route."""
         if execution.mission_id is not None:
             self._missions.update_status(execution.mission_id, MissionStatus.COMPLETED)
             result["completed_missions"].append(execution.mission_id)
@@ -346,7 +277,6 @@ class SimulationEngine:
             result["returned_home"].append(agent_id)
 
     def _begin_return(self, agent_id: str, execution: _Execution, result: StepResult) -> None:
-        """Start an agent's return trip after completing a mission."""
         agent = self._agents.get_agent(agent_id)
 
         if (agent.x, agent.y) == execution.launch_position:
@@ -376,18 +306,6 @@ class SimulationEngine:
         )
 
     def _find_path_from_agent(self, agent: Agent, goal: Position) -> Route | None:
-        """Compute a route from agent's current position to goal.
-
-        World.is_walkable treats an agent's own current cell as
-        occupied -- correctly, for every other agent's queries -- but
-        Path Planner would then see this agent's own start cell as
-        unwalkable and refuse to route it anywhere. Releasing and
-        re-occupying around the call keeps this self-consistent
-        without ever leaving the cell actually free for another agent
-        to claim: nothing else runs between the release and the
-        re-occupy, since SimulationEngine advances agents one at a
-        time within a single tick.
-        """
         self._world._release_cell(agent.x, agent.y)
         try:
             return self._path_planner.find_path(agent.x, agent.y, goal[0], goal[1])
