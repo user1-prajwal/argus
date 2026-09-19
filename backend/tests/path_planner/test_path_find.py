@@ -10,10 +10,16 @@ from app.path_planner import PathPlanner, Route
 from app.world import Obstacle, World
 
 
-def _is_four_directional_step(a: tuple[int, int], b: tuple[int, int]) -> bool:
+def _is_single_cell_step(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    """True if b is one of a's eight neighbors (orthogonal or diagonal).
+
+    Movement is now eight-directional (see app/path_planner/planner.py's
+    module docstring) -- a valid step is any single-cell move, not only
+    an orthogonal one.
+    """
     dx = abs(a[0] - b[0])
     dy = abs(a[1] - b[1])
-    return (dx, dy) in {(1, 0), (0, 1)}
+    return (dx, dy) in {(1, 0), (0, 1), (1, 1)}
 
 
 def test_find_path_straight_line(planner: PathPlanner) -> None:
@@ -35,15 +41,19 @@ def test_find_path_returns_shortest_length_in_open_grid(planner: PathPlanner) ->
     route = planner.find_path(0, 0, 2, 2)
 
     assert route is not None
-    assert route.length == 4  # Manhattan distance in an open grid
+    # With eight-directional movement, the shortest route from (0,0) to
+    # (2,2) is a straight diagonal (2 moves), not the 4-move Manhattan
+    # distance a four-directional-only search would require.
+    assert route.length == 2
+    assert route.cells == ((0, 0), (1, 1), (2, 2))
 
 
-def test_find_path_every_step_is_four_directional(planner: PathPlanner) -> None:
+def test_find_path_every_step_is_a_single_cell_move(planner: PathPlanner) -> None:
     route = planner.find_path(0, 0, 4, 4)
 
     assert route is not None
     for a, b in zip(route.cells, route.cells[1:]):
-        assert _is_four_directional_step(a, b)
+        assert _is_single_cell_step(a, b)
 
 
 def test_find_path_cells_are_contiguous_start_to_goal(planner: PathPlanner) -> None:
@@ -71,6 +81,9 @@ def test_find_path_detours_around_a_wall(world: World, planner: PathPlanner) -> 
 def test_find_path_treats_occupied_cells_as_impassable(world: World) -> None:
     # (1, 0) is the only route from (0, 0) to (2, 0) in a 1-row-tall
     # corridor -- occupy it and confirm the direct route is refused.
+    # A 1-row corridor has no room above or below for a diagonal
+    # detour either, so this remains a genuine "no route exists" case
+    # under eight-directional movement too.
     corridor = World(width=3, height=1)
     corridor_planner = PathPlanner(corridor)
     # Private hook, reserved for a future Agent module -- calling it
