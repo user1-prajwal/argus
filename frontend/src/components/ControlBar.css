@@ -1,0 +1,123 @@
+.control-bar {
+  height: var(--control-bar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 0 var(--space-5);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--line);
+}
+
+.control-bar__buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.control-bar__btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-panel-raised);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+  min-width: 84px;
+}
+
+.control-bar__btn:hover:not(:disabled) {
+  background: var(--bg-panel-hover);
+  border-color: var(--text-muted);
+}
+
+.control-bar__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.control-bar__btn--primary {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
+
+.control-bar__btn--primary:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.control-bar__btn--ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text-muted);
+}
+
+.control-bar__btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.control-bar__divider {
+  width: 1px;
+  height: 32px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+.control-bar__tick {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.control-bar__tick-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.control-bar__tick-value {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+}
+
+.control-bar__activity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+
+.control-bar__activity-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.control-bar__activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.control-bar__activity-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.control-bar__activity-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
