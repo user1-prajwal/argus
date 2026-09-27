@@ -22,7 +22,7 @@ from app.mission import Mission, MissionRegistry, MissionStatus
 from app.mission.exceptions import DuplicateMissionError
 from app.path_planner import PathPlanner
 from app.planning import PlanningEngine
-from app.simulation import SimulationEngine
+from app.simulation import SimulationEngine, coverage_waypoints_for
 from app.world import Obstacle, World
 from app.world.exceptions import (
     DuplicateChargingStationError,
@@ -134,6 +134,10 @@ def _serialize_agent(agent: Agent) -> AgentOut:
 
 
 def _serialize_mission(mission: Mission) -> dict:
+    # coverage_waypoints must NOT be sorted like target_cells above --
+    # its order IS the zig-zag visiting order (see
+    # coverage_waypoints_for's own docstring), not an arbitrary set.
+    is_area_watch = len(mission.target_cells) > 1
     return dict(
         id=mission.id,
         name=mission.name,
@@ -146,6 +150,9 @@ def _serialize_mission(mission: Mission) -> dict:
         target_cells=sorted(mission.target_cells),
         assigned_agent_ids=sorted(mission.assigned_agent_ids),
         created_at=mission.created_at,
+        coverage_waypoints=(
+            list(coverage_waypoints_for(mission.target_cells)) if is_area_watch else None
+        ),
     )
 
 
@@ -388,8 +395,15 @@ def get_agent_route(session_id: str, agent_id: str) -> AgentRouteResponse:
             detail=f"Agent '{agent_id}' has no active route",
         )
 
+    progress = session.simulation_engine.get_waypoint_progress(agent_id)
+    current_waypoint, total_waypoints = progress if progress is not None else (None, None)
+
     return AgentRouteResponse(
-        agent_id=agent_id, cells=list(route.cells), length=route.length
+        agent_id=agent_id,
+        cells=list(route.cells),
+        length=route.length,
+        current_waypoint=current_waypoint,
+        total_waypoints=total_waypoints,
     )
 
 
