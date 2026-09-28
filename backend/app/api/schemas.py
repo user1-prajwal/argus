@@ -121,7 +121,12 @@ class AgentOut(BaseModel):
 
 
 class MissionOut(BaseModel):
-    """Mission -> JSON, field for field."""
+    """Mission -> JSON, field for field, plus one derived,
+    presentation-only field: coverage_waypoints (see its own docstring
+    below) is not a Mission field -- it is computed from target_cells
+    by the same function SimulationEngine itself routes through, so
+    display never drifts from what the engine actually does.
+    """
 
     id: str
     name: str
@@ -132,6 +137,11 @@ class MissionOut(BaseModel):
     target_cells: list[tuple[int, int]]
     assigned_agent_ids: list[str]
     created_at: datetime
+    # The ~4 Area Watch coverage waypoints, in visiting order (see
+    # app.simulation.coverage_waypoints_for), for a mission with more
+    # than one target cell. None for a point mission (exactly one
+    # target cell) -- there is no coverage route to show.
+    coverage_waypoints: list[tuple[int, int]] | None = None
 
 
 class WorldSummaryOut(BaseModel):
@@ -228,12 +238,17 @@ class RunResponse(BaseModel):
 class AgentRouteResponse(BaseModel):
     """Matches Route (app/path_planner/planner.py) field-for-field, as
     currently returned by SimulationEngine.get_active_route(agent_id) --
-    not recomputed, not approximated.
+    not recomputed, not approximated. current_waypoint/total_waypoints
+    are the one addition: SimulationEngine.get_waypoint_progress's own
+    (current, total) pair, present only while this agent is mid-Area-
+    Watch-coverage -- both None for a point mission or a return leg.
     """
 
     agent_id: str
     cells: list[tuple[int, int]]
     length: int
+    current_waypoint: int | None = None
+    total_waypoints: int | None = None
 
 
 # ----------------------------------------------------------------------
