@@ -1,0 +1,321 @@
+.geo-map {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-void);
+}
+
+.geo-map__container {
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------
+   Leaflet base overrides — keep the map itself in the console's dark
+   operational palette rather than Leaflet's default light chrome.
+   ------------------------------------------------------------------ */
+
+.geo-map .leaflet-container {
+  background: var(--bg-panel);
+  font-family: var(--font-sans);
+}
+
+.geo-map .leaflet-control-zoom a {
+  background: var(--bg-panel-raised);
+  color: var(--text-primary);
+  border-color: var(--line-strong) !important;
+}
+
+.geo-map .leaflet-control-zoom a:hover {
+  background: var(--bg-panel-hover);
+}
+
+.geo-map .leaflet-control-attribution {
+  background: rgba(19, 25, 32, 0.85);
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.geo-map .leaflet-control-attribution a {
+  color: var(--text-secondary);
+}
+
+.geo-map .leaflet-tooltip {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--line-strong);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  box-shadow: none;
+}
+
+.geo-map .leaflet-tooltip-top:before {
+  border-top-color: var(--line-strong);
+}
+
+/* ------------------------------------------------------------------
+   Smooth agent movement — agents advance one grid cell per simulation
+   tick, so animating the transform Leaflet already uses to position
+   every marker (see L.DomUtil.setPosition) turns each tick's update
+   into a glide instead of an instant teleport. This costs nothing
+   beyond the transition itself: marker.setLatLng() is unchanged in
+   GeoMap.tsx, so it animates for free. Scoped to agent icons only —
+   mission and coverage-waypoint markers don't move tick-to-tick and
+   should keep snapping to their (fixed) position instantly.
+   ------------------------------------------------------------------ */
+
+.leaflet-marker-icon.geo-map__agent-icon {
+  transition: transform 280ms ease-in-out;
+}
+
+/* Suspended while the user is panning or zooming (see GeoMap.tsx's
+   movestart/moveend/zoomstart/zoomend listeners, which toggle this
+   class on the map container): Leaflet repositions every marker
+   during those gestures with the same transform, and animating that
+   too would make agent markers visibly lag behind the map tiles
+   instead of tracking the drag/zoom directly. */
+.geo-map__container.geo-map--interacting .leaflet-marker-icon.geo-map__agent-icon {
+  transition: none;
+}
+
+/* ------------------------------------------------------------------
+   Agent markers
+   ------------------------------------------------------------------ */
+
+.geo-map__agent-icon-inner {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-map__agent-glyph {
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(11, 15, 20, 0.9));
+}
+
+.geo-map__agent-ring {
+  position: absolute;
+  inset: -2px;
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 50%;
+  animation: geo-map-pulse 1.8s ease-in-out infinite;
+}
+
+.geo-map__agent-flag {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--status-failed);
+  color: var(--bg-void);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------
+   Mission markers
+   ------------------------------------------------------------------ */
+
+.geo-map__mission-icon-inner {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-map__mission-diamond {
+  width: 14px;
+  height: 14px;
+  background: var(--bg-panel-raised);
+  border: 2px solid var(--marker-color, var(--status-pending));
+  transform: rotate(45deg);
+}
+
+.geo-map__mission-icon--selected .geo-map__mission-diamond {
+  background: var(--marker-color, var(--status-pending));
+}
+
+.geo-map__mission-ring {
+  position: absolute;
+  inset: -3px;
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 50%;
+  animation: geo-map-pulse 1.8s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------
+   Area Watch coverage waypoints -- the ~4 deterministic points a
+   drone visits in order inside a watch area (mission.coverage_waypoints).
+   Small numbered dots, distinct from the mission's own diamond marker
+   and from the watch-area rectangle, so the coverage route itself is
+   visible on the map, not just the zone it happens inside.
+   ------------------------------------------------------------------ */
+
+.geo-map__waypoint-icon-inner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg-panel-raised);
+  border: 2px solid var(--priority-medium);
+  color: var(--text-secondary);
+}
+
+.geo-map__waypoint-icon--visited .geo-map__waypoint-icon-inner {
+  background: var(--priority-medium);
+  color: var(--bg-panel-raised);
+  opacity: 0.6;
+}
+
+.geo-map__waypoint-icon--current .geo-map__waypoint-icon-inner {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25);
+  animation: geo-map-pulse 1.4s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------
+   Draft (pending, not-yet-submitted) mission marker
+   ------------------------------------------------------------------ */
+
+.geo-map__draft-icon-inner {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-map__draft-diamond {
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  border: 2px dashed var(--accent-cyan);
+  transform: rotate(45deg);
+  animation: geo-map-pulse 1.4s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------
+   Draft (configured, not-yet-connected) drone marker — same glyph
+   language a connected agent uses, dashed/dimmed to signal "not live
+   yet" rather than switching to a different shape entirely.
+   ------------------------------------------------------------------ */
+
+.geo-map__draft-drone-icon-inner {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-cyan);
+  border: 1.5px dashed var(--accent-cyan-line);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.geo-map__draft-drone-glyph {
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(11, 15, 20, 0.9));
+}
+
+/* ------------------------------------------------------------------
+   Operating-area selection (before a scenario exists)
+   ------------------------------------------------------------------ */
+
+.geo-map .geo-map__draft-area {
+  stroke: var(--accent-cyan);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  fill: var(--accent-cyan);
+  fill-opacity: 0.08;
+}
+
+/* ------------------------------------------------------------------
+   Routes
+   ------------------------------------------------------------------ */
+
+.geo-map .geo-map__route {
+  stroke: var(--text-secondary);
+}
+
+.geo-map .geo-map__route--selected {
+  stroke: var(--accent-cyan-line);
+}
+
+.geo-map .geo-map__route-traveled {
+  stroke: var(--status-executing);
+  stroke-opacity: 0.6;
+}
+
+.geo-map .geo-map__route-traveled--selected {
+  stroke: var(--accent-cyan);
+  stroke-opacity: 0.9;
+}
+
+@keyframes geo-map-pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geo-map__agent-ring,
+  .geo-map__mission-ring,
+  .geo-map__draft-diamond {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
+
+/* A LIVE mission's watch area (backend-confirmed, post-session) --
+   colored by priority, same as a point mission's marker color, so a
+   watch area and a point target read as the same "kind of thing" at
+   different scales. */
+.geo-map .geo-map__mission-area {
+  stroke: var(--priority-medium);
+  stroke-width: 2;
+  fill: var(--priority-medium);
+  fill-opacity: 0.12;
+}
+
+.geo-map .geo-map__mission-area--selected {
+  stroke: var(--accent-cyan);
+  stroke-width: 3;
+  fill: var(--accent-cyan);
+  fill-opacity: 0.18;
+}
+
+/* A DRAFT (not yet submitted) watch-area mission, and the live
+   in-progress two-corner preview while drawing one -- dashed, matching
+   the existing draft-marker/draft-area visual language elsewhere on
+   this map (see .geo-map__draft-area, .geo-map__draft-diamond). */
+.geo-map .geo-map__draft-mission-area {
+  stroke: var(--accent-cyan);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  fill: var(--accent-cyan);
+  fill-opacity: 0.1;
+}
+
