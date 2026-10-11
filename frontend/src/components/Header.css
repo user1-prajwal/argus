@@ -1,0 +1,138 @@
+.argus-header {
+  height: var(--header-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-5);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.argus-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Three bars of varying height — a minimal signal-strength motif
+   standing in for a wordmark, echoed nowhere else in the UI. */
+.argus-header__mark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 20px;
+}
+
+.argus-header__mark span {
+  width: 4px;
+  background: var(--accent-cyan);
+  border-radius: 1px;
+}
+
+.argus-header__mark span:nth-child(1) {
+  height: 8px;
+}
+
+.argus-header__mark span:nth-child(2) {
+  height: 14px;
+}
+
+.argus-header__mark span:nth-child(3) {
+  height: 20px;
+}
+
+.argus-header__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.argus-header__name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+
+.argus-header__subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.argus-header__telemetry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.argus-header__stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.argus-header__stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.argus-header__stat-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+}
+
+.argus-header__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+}
+
+.argus-header__status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.argus-header__status-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+}
+
+.argus-header__status--standby .argus-header__status-dot {
+  background: var(--status-idle);
+}
+.argus-header__status--standby .argus-header__status-label {
+  color: var(--text-secondary);
+}
+
+.argus-header__status--active .argus-header__status-dot {
+  background: var(--status-executing);
+  box-shadow: 0 0 6px var(--status-executing);
+}
+.argus-header__status--active .argus-header__status-label {
+  color: var(--status-executing);
+}
+
+.argus-header__status--settled .argus-header__status-dot {
+  background: var(--status-completed);
+}
+.argus-header__status--settled .argus-header__status-label {
+  color: var(--status-completed);
+}
+
+.argus-header__status--offline .argus-header__status-dot {
+  background: var(--status-failed);
+}
+.argus-header__status--offline .argus-header__status-label {
+  color: var(--status-failed);
+}
