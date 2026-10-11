@@ -1,0 +1,246 @@
+.fleet-config {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fleet-config__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fleet-config__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fleet-config__add-btn {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-cyan-line);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fleet-config__add-btn:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.fleet-config__add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fleet-config__empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: var(--space-3) 0;
+  text-align: center;
+}
+
+.fleet-config__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.fleet-config__item {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.fleet-config__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.fleet-config__item-id {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+}
+
+.fleet-config__remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.fleet-config__remove-btn:hover:not(:disabled) {
+  color: var(--status-failed);
+  background: var(--bg-panel-hover);
+}
+
+.fleet-config__item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.fleet-config__item-fields > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.fleet-config__item-fields dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fleet-config__item-fields dd {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.fleet-config__status-pill {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--status-completed);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fleet-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.fleet-config__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fleet-config__field span:first-child {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.fleet-config__field input,
+.fleet-config__field select {
+  background: var(--bg-void);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: var(--space-2);
+}
+
+.fleet-config__field input:focus,
+.fleet-config__field select:focus {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 1px;
+}
+
+.fleet-config__field-error {
+  font-size: 11px;
+  color: var(--status-failed);
+}
+
+.fleet-config__position-hint {
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fleet-config__position-set {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.fleet-config__form-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.fleet-config__divider {
+  height: 1px;
+  background: var(--line);
+  margin: var(--space-1) 0;
+}
+
+.fleet-config__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.fleet-config__btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fleet-config__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fleet-config__btn--primary {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
+
+.fleet-config__btn--primary:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.fleet-config__btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.fleet-config__btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.fleet-config__note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 0;
+}
