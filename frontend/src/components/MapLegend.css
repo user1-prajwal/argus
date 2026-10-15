@@ -1,0 +1,87 @@
+.map-legend {
+  position: absolute;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(19, 25, 32, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  z-index: 1;
+}
+
+.map-legend__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.map-legend__text {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.map-legend__swatch {
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.map-legend__swatch--agent {
+  width: 12px;
+  height: 12px;
+  background: var(--text-secondary);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.map-legend__swatch--diamond {
+  width: 10px;
+  height: 10px;
+  background: var(--text-secondary);
+  transform: rotate(45deg);
+}
+
+/* Matches .geo-map__waypoint-icon-inner (GeoMap.css) at legend scale —
+   the small numbered dots an Area Watch mission's coverage waypoints
+   are drawn as on the map. */
+.map-legend__swatch--waypoint {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--priority-medium);
+  background: var(--bg-panel-raised);
+  color: var(--text-secondary);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 10px;
+  text-align: center;
+}
+
+.map-legend__swatch--route-traveled {
+  width: 14px;
+  height: 2px;
+  background: var(--status-executing);
+  opacity: 0.55;
+}
+
+.map-legend__swatch--route-remaining {
+  width: 14px;
+  height: 0;
+  border-top: 2px dashed var(--text-secondary);
+}
+
+.map-legend__swatch--dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.map-legend__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--line-strong);
+}
