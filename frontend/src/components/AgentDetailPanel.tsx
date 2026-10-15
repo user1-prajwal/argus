@@ -1,9 +1,14 @@
-import type { AgentOut } from "../types/argus";
+import type { AgentOut, AgentRouteResponse } from "../types/argus";
 import "./DetailPanel.css";
 
 interface AgentDetailPanelProps {
   agent: AgentOut;
   onClose: () => void;
+  /** This agent's active route, if any -- used only to surface Area
+   * Watch coverage progress (current_waypoint/total_waypoints) below.
+   * Optional: panels rendered without live route data simply omit
+   * that field. */
+  route?: AgentRouteResponse | null;
 }
 
 const ACTIVITY_COLOR: Record<AgentOut["activity"], string> = {
@@ -26,7 +31,10 @@ function batteryColor(level: number): string {
   return "var(--status-completed)";
 }
 
-export function AgentDetailPanel({ agent, onClose }: AgentDetailPanelProps) {
+export function AgentDetailPanel({ agent, onClose, route }: AgentDetailPanelProps) {
+  const hasWaypointProgress =
+    route?.current_waypoint != null && route.total_waypoints != null;
+
   return (
     <div className="detail-panel" role="region" aria-label="Selected agent detail">
       <div className="detail-panel__header">
@@ -118,6 +126,15 @@ export function AgentDetailPanel({ agent, onClose }: AgentDetailPanelProps) {
             )}
           </dd>
         </div>
+
+        {hasWaypointProgress && (
+          <div className="detail-panel__field">
+            <dt>Coverage progress</dt>
+            <dd className="data">
+              Waypoint {route!.current_waypoint} of {route!.total_waypoints}
+            </dd>
+          </div>
+        )}
       </dl>
     </div>
   );
