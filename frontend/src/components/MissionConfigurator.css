@@ -1,0 +1,290 @@
+.mission-config {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mission-config__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mission-config__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mission-config__add-btn {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-cyan-line);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mission-config__add-btn:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.mission-config__add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mission-config__empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: var(--space-3) 0;
+  text-align: center;
+}
+
+.mission-config__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.mission-config__item {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.mission-config__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+  gap: var(--space-2);
+}
+
+.mission-config__item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-config__item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.mission-config__icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.mission-config__icon-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-panel-hover);
+}
+
+.mission-config__icon-btn--danger {
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.mission-config__icon-btn--danger:hover:not(:disabled) {
+  color: var(--status-failed);
+}
+
+.mission-config__item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.mission-config__item-fields > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.mission-config__item-fields dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.mission-config__item-fields dd {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.mission-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.mission-config__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mission-config__field span:first-child {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.mission-config__field input,
+.mission-config__field select {
+  background: var(--bg-void);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: var(--space-2);
+}
+
+.mission-config__field input:focus,
+.mission-config__field select:focus {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 1px;
+}
+
+.mission-config__field-error {
+  font-size: 11px;
+  color: var(--status-failed);
+}
+
+.mission-config__position-hint {
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.mission-config__position-set {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.mission-config__form-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.mission-config__divider {
+  height: 1px;
+  background: var(--line);
+  margin: var(--space-1) 0;
+}
+
+.mission-config__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.mission-config__btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mission-config__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mission-config__btn--primary {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
+
+.mission-config__btn--primary:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.mission-config__btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.mission-config__btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.mission-config__note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+
+
+
+.mission-config__mode-toggle {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.mission-config__mode-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-void);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mission-config__mode-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.mission-config__mode-btn--active {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
