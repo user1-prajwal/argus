@@ -1,0 +1,89 @@
+.mission-draft__coords {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.mission-draft__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mission-draft__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mission-draft__field span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.mission-draft__field input,
+.mission-draft__field select {
+  background: var(--bg-void);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: var(--space-2) var(--space-2);
+}
+
+.mission-draft__field input:focus,
+.mission-draft__field select:focus {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 1px;
+}
+
+.mission-draft__note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.mission-draft__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.mission-draft__btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mission-draft__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mission-draft__btn--primary {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
+
+.mission-draft__btn--primary:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.mission-draft__btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.mission-draft__btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
