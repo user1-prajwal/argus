@@ -1,0 +1,122 @@
+.area-selector {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.area-selector__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.area-selector__body {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.area-selector__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.area-selector__steps li {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding-left: var(--space-4);
+  position: relative;
+}
+
+.area-selector__steps li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.area-selector__steps li.area-selector__step--active {
+  color: var(--accent-cyan);
+}
+
+.area-selector__steps li.area-selector__step--active::before {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 4px var(--accent-cyan);
+}
+
+.area-selector__steps li.area-selector__step--done {
+  color: var(--text-secondary);
+}
+
+.area-selector__steps li.area-selector__step--done::before {
+  background: var(--status-completed);
+}
+
+.area-selector__summary {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-void);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.area-selector__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.area-selector__btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.area-selector__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.area-selector__btn--primary {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan-line);
+  color: var(--accent-cyan);
+}
+
+.area-selector__btn--primary:hover:not(:disabled) {
+  background: rgba(79, 209, 232, 0.24);
+}
+
+.area-selector__btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.area-selector__btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.area-selector__note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 0;
+}
