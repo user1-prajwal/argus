@@ -1,0 +1,138 @@
+.world-map {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--bg-void);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Vignette reinforcing "sensor display" rather than "app canvas." */
+.world-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+.world-map__svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.world-map__bg {
+  fill: var(--bg-panel);
+}
+
+.world-map__grid line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.world-map__obstacle-cell {
+  fill: var(--bg-panel-raised);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+/* Diagonal hatch, applied via repeating pattern on a pseudo-layer is
+   overkill for SVG rects at this scale — a flat, clearly-blocked fill
+   plus a stronger stroke reads as "blocked" without game-like texture. */
+
+.world-map__route {
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.world-map__route--selected {
+  stroke: var(--accent-cyan-line);
+  stroke-width: 2;
+}
+
+.world-map__route-traveled {
+  stroke: var(--status-executing);
+  stroke-width: 2;
+  stroke-opacity: 0.55;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.world-map__route-traveled--selected {
+  stroke: var(--accent-cyan);
+  stroke-opacity: 0.85;
+  stroke-width: 2.5;
+}
+
+.world-map__mission-diamond {
+  fill: var(--bg-panel-raised);
+  stroke: var(--priority-color, var(--status-pending));
+  stroke-width: 2;
+}
+
+.world-map__mission-marker {
+  cursor: pointer;
+}
+
+.world-map__mission-marker:focus-visible .world-map__mission-diamond,
+.world-map__mission-marker--selected .world-map__mission-diamond {
+  fill: var(--priority-color, var(--status-pending));
+}
+
+.world-map__agent-dot {
+  fill: var(--activity-color, var(--status-idle));
+  stroke: var(--bg-void);
+  stroke-width: 1.5;
+}
+
+.world-map__agent-marker {
+  cursor: pointer;
+}
+
+.world-map__agent-flag {
+  fill: var(--status-failed);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.world-map__selection-ring {
+  fill: none;
+  stroke: var(--accent-cyan);
+  stroke-width: 1.5;
+  animation: world-map-pulse 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes world-map-pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-map__selection-ring {
+    animation: none;
+    opacity: 0.9;
+  }
+}
