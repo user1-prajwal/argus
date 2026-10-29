@@ -1,3 +1,5 @@
+import type { PlaybackSpeed } from "../hooks/useScenario";
+import { PLAYBACK_SPEEDS } from "../hooks/useScenario";
 import type { ControlAction } from "../hooks/useScenario";
 import type { ScenarioPhase, StepResponse } from "../types/argus";
 import "./ControlBar.css";
@@ -17,6 +19,10 @@ interface ControlBarProps {
   pendingAction: ControlAction;
   isPlaying: boolean;
   lastStepResult: StepResponse | null;
+  /** Current Run playback speed (see PLAYBACK_SPEEDS) — a UI setting
+   * only; Step always applies exactly one real tick regardless. */
+  playbackSpeed: PlaybackSpeed;
+  onSetPlaybackSpeed: (speed: PlaybackSpeed) => void;
   onStep: () => void;
   onRun: () => void;
   onReset: () => void;
@@ -49,6 +55,8 @@ export function ControlBar({
   pendingAction,
   isPlaying,
   lastStepResult,
+  playbackSpeed,
+  onSetPlaybackSpeed,
   onStep,
   onRun,
   onReset,
@@ -81,6 +89,25 @@ export function ControlBar({
         >
           {pendingAction === "reset" ? "Resetting…" : "Reset"}
         </button>
+      </div>
+
+      <div className="control-bar__divider" />
+
+      <div className="control-bar__speed" role="group" aria-label="Run playback speed">
+        <span className="control-bar__speed-label">Speed</span>
+        {PLAYBACK_SPEEDS.map((speed) => (
+          <button
+            key={speed}
+            type="button"
+            className={`control-bar__speed-btn${
+              playbackSpeed === speed ? " control-bar__speed-btn--active" : ""
+            }`}
+            aria-pressed={playbackSpeed === speed}
+            onClick={() => onSetPlaybackSpeed(speed)}
+          >
+            {speed}x
+          </button>
+        ))}
       </div>
 
       <div className="control-bar__divider" />
